@@ -19,7 +19,29 @@ Model Versioning and Restoration require concious thought, design, and understan
 
 I do not recommend using paper_trail-association_tracking because it is mostly a blackbox solution which encourages you to set it up and then assume its Just Working<sup>TM</sup>. This makes for major data problems later. Dont fall into this trap. Instead read this gems brief source code completely before use OR copy the code straight into your codebase. Once you know it, then you are free.
 
+# This is a fork
 
+This is a fork of [westonganger/active_snapshot](https://github.com/westonganger/active_snapshot). It adds the following features:
+
+- Support foreign key constraints by setting the restore_first option to associated records. See below for an example.
+
+## Keep the fork up to date
+
+```
+# One-time setup
+git clone git@github.com:medlinq/active_snapshot.git
+git remote add upstream git@github.com:westonganger/active_snapshot.git
+
+# Fetch the latest changes from the upstream repository
+git fetch upstream
+
+# Check out your local master branch and merge the upstream changes
+git checkout master
+git merge upstream/master
+
+# Push the updated master branch to your fork on GitHub
+git push origin master
+```
 
 # Installation
 
@@ -101,24 +123,24 @@ snapshot.destroy!
 ```ruby
 class Post < ActiveRecord::Base
   include ActiveSnapshot
-  
+
   has_snapshot_children do
     ### Executed in the context of the instance / self
 
     ### Reload record from database to ensure a clean state and eager load the specified associations
     instance = self.class.includes(:tags, :ip_address, comments: [:comment_sub_records]).find(id)
-    
+
     ### Define the associated records that will be restored
     {
       comments: instance.comments,
-      
+
       ### Nested Associations can be handled by simply mapping them into an array
-      comment_sub_records: instance.comments.flat_map{|x| x.comment_sub_records }, 
-      
+      comment_sub_records: instance.comments.flat_map{|x| x.comment_sub_records },
+
       tags: {
         records: instance.tags
       },
-      
+
       ip_address: {
         record: instance.ip_address,
         delete_method: ->(item){ item.release! },
@@ -134,7 +156,7 @@ Now when you run `create_snapshot!` the associations will be tracked accordingly
 
 # Reifying Snapshot Items
 
-You can view all of the reified snapshot items by calling the following method. Its completely up to you on how to use this data. 
+You can view all of the reified snapshot items by calling the following method. Its completely up to you on how to use this data.
 
 ```ruby
 reified_parent, reified_children_hash = snapshot.fetch_reified_items
