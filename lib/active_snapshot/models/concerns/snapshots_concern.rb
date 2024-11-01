@@ -8,13 +8,7 @@ module ActiveSnapshot
       has_many :snapshot_items, as: :item, class_name: 'ActiveSnapshot::SnapshotItem'
     end
 
-    def create_snapshot!(legacy_identifier=nil, identifier: nil, user: nil, metadata: nil)
-      if identifier.nil? && legacy_identifier
-        identifier = legacy_identifier
-
-        ActiveSupport::Deprecation.warn(LEGACY_POSITIONAL_ARGUMENT_WARNING)
-      end
-
+    def create_snapshot!(identifier: nil, user: nil, metadata: nil)
       snapshot = snapshots.create!({
         identifier: identifier,
         user_id: (user.id if user),
@@ -22,25 +16,27 @@ module ActiveSnapshot
         metadata: (metadata || {}),
       })
 
-      snapshot_items = []
       restore_first_items = []
+      new_entries = []
 
-      snapshot_items << snapshot.build_snapshot_item(self)
+      current_time = Time.now
+
+      new_entries << snapshot.build_snapshot_item(self).attributes.merge(created_at: current_time)
 
       snapshot_children = self.children_to_snapshot
 
       if snapshot_children
         snapshot_children.each do |child_group_name, h|
           h[:records].each do |child_item|
-            (h[:restore_first] ? restore_first_items : snapshot_items) << snapshot.build_snapshot_item(child_item, child_group_name: child_group_name)
+            (h[:restore_first] ? restore_first_items : new_entries) << snapshot.build_snapshot_item(child_item, child_group_name: child_group_name).attributes.merge(created_at: current_time)
           end
         end
       end
 
       ### Prepend restore_first items to account for potential foreign keys
-      snapshot_items.unshift(*restore_first_items)
+      new_entries.unshift(*restore_first_items)
 
-      SnapshotItem.import(snapshot_items, validate: true)
+      SnapshotItem.upsert_all(new_entries.map{|x| x.delete("id"); x }, returning: false)
 
       snapshot
     end
@@ -137,8 +133,6 @@ module ActiveSnapshot
         return snapshot_children
       end
     end
-
-    LEGACY_POSITIONAL_ARGUMENT_WARNING = "Supplying the snapshots :identifier as a positional argument is now deprecated and will be removed in upcoming versions. Please supply the snapshot identifier using the :identifier keyword argument instead.".freeze
 
   end
 end

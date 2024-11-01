@@ -2,7 +2,22 @@ CHANGELOG
 ---------
 
 - **Unreleased**
-  * [View Diff](https://github.com/westonganger/active_snapshot/compare/v0.3.0...master)
+  * [View Diff](https://github.com/westonganger/active_snapshot/compare/v0.4.0...master)
+  * [#56](https://github.com/westonganger/active_snapshot/pull/56) - Add presence validation for object in SnapshotItem model
+  * [#57](https://github.com/westonganger/active_snapshot/pull/57) - Add readonly argument to Shapshot#fetch_reified_items
+  * [#53](https://github.com/westonganger/active_snapshot/pull/53) - Allow `ActiveSnapshot.config` to be called before ActiveRecord `on_load` hook has occurred
+  * [#52](https://github.com/westonganger/active_snapshot/pull/52) - Remove deprecated positional argument on `create_snapshot!`
+
+- **v0.4.0** - July 23, 2024
+  * [View Diff](https://github.com/westonganger/active_snapshot/compare/v0.3.2...v0.4.0)
+  * [#44](https://github.com/westonganger/active_snapshot/pull/44) - Remove dependency on `activerecord-import` with vanilla ActiveRecord `upsert_all`
+
+- **v0.3.2** - Oct 17, 2023
+  * [View Diff](https://github.com/westonganger/active_snapshot/compare/v0.3.1...v0.3.2)
+  * [#43](https://github.com/westonganger/active_snapshot/pull/43) - Fix unique index error in generated DB migration
+
+- **v0.3.1** - August 4, 2023
+  * [View Diff](https://github.com/westonganger/active_snapshot/compare/v0.3.0...v0.3.1)
   * [#36](https://github.com/westonganger/active_snapshot/pull/36) - Allow ActiveRecord to be lazy loaded using `ActiveSupport.on_load`
   * [#35](https://github.com/westonganger/active_snapshot/pull/35) - Add `optional: true` to the Snapshot `belongs_to :user` relationship
   * [#39](https://github.com/westonganger/active_snapshot/pull/39) - Remove redundant validation on SnapshotItem for item_type

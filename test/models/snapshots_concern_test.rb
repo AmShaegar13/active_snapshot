@@ -136,22 +136,6 @@ class SnapshotsConcernTest < ActiveSupport::TestCase
     assert_equal snapshot.snapshot_items.first.item_type, 'Post'
   end
 
-  def test_legacy_positional_identifier_argument
-    call_count = 0
-
-    allow_any_instance_of(ActiveSupport::Deprecation).to receive(:warn).and_wrap_original do |m, *args|
-      if args.first == ActiveSnapshot::SnapshotsConcern::LEGACY_POSITIONAL_ARGUMENT_WARNING
-        call_count += 1
-      end
-    end
-
-    assert_difference ->{ ActiveSnapshot::Snapshot.count }, 1 do
-      @snapshot = Post.first.create_snapshot!("snapshot-1")
-    end
-
-    assert_equal call_count, 1
-  end
-
   def test_optional_identifier
     post = Post.first
 

@@ -15,15 +15,17 @@ if ENV["ACTIVE_SNAPSHOT_STORAGE_METHOD"].present?
   ActiveSnapshot.config.storage_method = ENV["ACTIVE_SNAPSHOT_STORAGE_METHOD"]
 end
 
-begin
-  require 'warning'
+require 'warning'
 
-  Warning.ignore(
-    %r{mail/parsers/address_lists_parser}, ### Hide mail gem warnings
-  )
-rescue LoadError
-  # Do nothing
-end
+Warning.ignore(
+  %r{mail/parsers/address_lists_parser}, ### Hide mail gem warnings
+)
+
+### Delete the database completely before starting
+FileUtils.rm(
+  File.expand_path("../dummy_app/db/*sqlite*",  __FILE__),
+  force: true,
+)
 
 ### Instantiates Rails
 require File.expand_path("../dummy_app/config/environment.rb",  __FILE__)
@@ -49,12 +51,10 @@ Minitest::Reporters.use!(
 require "minitest/autorun"
 
 # Run any available migration
-if ActiveRecord.gem_version >= Gem::Version.new("6.0")
+if ActiveRecord::VERSION::MAJOR == 6
   ActiveRecord::MigrationContext.new(File.expand_path("dummy_app/db/migrate/", __dir__), ActiveRecord::SchemaMigration).migrate
-elsif ActiveRecord.gem_version >= Gem::Version.new("5.2")
-  ActiveRecord::MigrationContext.new(File.expand_path("dummy_app/db/migrate/", __dir__)).migrate
 else
-  ActiveRecord::Migrator.migrate File.expand_path("dummy_app/db/migrate/", __dir__)
+  ActiveRecord::MigrationContext.new(File.expand_path("dummy_app/db/migrate/", __dir__)).migrate
 end
 
 require 'rspec/mocks'
@@ -75,24 +75,9 @@ module MinitestRSpecMocksIntegration
 end
 Minitest::Test.send(:include, MinitestRSpecMocksIntegration)
 
-klasses = [
-  Post,
-  ActiveSnapshot::Snapshot,
-  ActiveSnapshot::SnapshotItem,
-]
-
-klasses.each do |klass|
-  if klass.connection.adapter_name.downcase.include?("sqlite")
-    ActiveRecord::Base.connection.execute("DELETE FROM #{klass.table_name};")
-    ActiveRecord::Base.connection.execute("UPDATE `sqlite_sequence` SET `seq` = 0 WHERE `name` = '#{klass.table_name}';")
-  else
-    ActiveRecord::Base.connection.execute("TRUNCATE TABLE #{klass.table_name}")
-  end
-end
-
 DATA = {}.with_indifferent_access
 
-DATA[:shared_post] = Post.find_or_create_by!(a: 1, b: 3)
+DATA[:shared_post] = Post.create!(a: 1, b: 3)
 DATA[:shared_post].create_snapshot!(identifier: 'v1')
 DATA[:shared_post].update_columns(a: 2, b: 4)
 DATA[:shared_post].create_snapshot!(identifier: 'v2')
